@@ -4,7 +4,6 @@ import { AuthContext } from "../components/AuthProvider";
 import { useNavigate } from "react-router-dom";
 import axios from "axios";
 import { toast } from "sonner";
-import { Link } from "react-router-dom";
 import {
   Card,
   CardContent,
@@ -15,27 +14,25 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 
-export function Login() {
+export function Signup() {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const navigate = useNavigate();
 
   const handleSubmit = async (e) => {
     e.preventDefault();
     const apiCall = async () => {
-      const response = await axios.post("http://localhost:3000/api/signin", {
+      const response = await axios.post("http://localhost:3000/api/signup", {
         email,
         password,
       });
-      const jwtToken = response.data.token;
-      localStorage.setItem("token", jwtToken);
-      setIsAuthenticated(true);
-      navigate("/admin");
+
+      navigate("/login");
       return response.data;
     };
     toast.promise(apiCall(), {
-      success: (data) => `${data.message || "Logged in successfully!"}`,
+      success: (data) =>
+        `${data.message || "SignIn Successfull in successfully!"}`,
       loading: "loading .....",
       error: (error) => `${error.response.data.message || "Login failed"}`,
     });
@@ -47,10 +44,10 @@ export function Login() {
         <Card className="shadow-xl">
           <CardHeader className="text-center">
             <CardTitle className="text-3xl font-bold text-gray-900">
-              Welcome back
+              Get Started
             </CardTitle>
             <CardDescription className="text-gray-500">
-              Sign in to access your admin dashboard
+              Sign up to access your admin dashboard
             </CardDescription>
           </CardHeader>
           <CardContent>
@@ -92,11 +89,8 @@ export function Login() {
                 className="w-full flex items-center justify-center"
               >
                 <LogIn className="w-5 h-5 mr-2" />
-                Sign in
+                Sign up
               </Button>
-              <Link to="/signup">
-                <Button variant="link">Create an Account </Button>
-              </Link>
             </form>
           </CardContent>
         </Card>

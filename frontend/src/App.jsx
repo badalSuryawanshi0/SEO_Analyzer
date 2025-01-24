@@ -4,11 +4,16 @@ import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { AdminDashboard } from "./pages/AdminDashBoard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
+import { Signup } from "./pages/Signin";
 function App() {
   const router = createBrowserRouter([
     {
       path: "/login",
       element: <Login />,
+    },
+    {
+      path:'/signup',
+      element: <Signup/>
     },
     {
       path: "/",
