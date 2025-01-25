@@ -36,7 +36,7 @@ export const ensureAdmin = async (req, res, next) => {
         console.log("Logging the id that we are setting in cookie", user.id);
         res.cookie("id", user.id, {
           httpOnly: true,
-          secure: false, //Set this true in production
+          secure: true, //Set this true in production
           maxAge: 1 * 24 * 60 * 60 * 1000, //1 day
         });
         req.user = user;

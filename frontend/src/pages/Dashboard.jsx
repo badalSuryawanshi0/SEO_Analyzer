@@ -34,7 +34,7 @@ export function Dashboard() {
         : undefined;
       try {
         const res = await axios.post(
-          "http://localhost:3000/api/analyze",
+          "https://localhost:3000/api/analyze",
           { url },
           { withCredentials: true },
           headers
@@ -45,7 +45,7 @@ export function Dashboard() {
         return res.data;
       } catch (error) {
         if (error.response?.status === 429) {
-          //error msg fro rate-limit
+          //error msg for rate-limit
           throw new Error(error.response.data.message);
         }
         throw new Error(error.response?.data?.message || "Please try again");

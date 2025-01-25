@@ -12,7 +12,6 @@ export function UrlSubmitForm({ onSubmit }) {
 
     if (url) {
       onSubmit(url);
-      console.log("Pew Pew Url from UrlSubmitForm", url);
     }
   };
 

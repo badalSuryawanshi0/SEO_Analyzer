@@ -21,7 +21,7 @@ app.use(express.json());
 app.use(cookieParser());
 app.use(
   cors({
-    origin: "http://localhost:5173",
+    origin: "http://seoanalyzer.onrender.com",
     credentials: true, //Allow credentials (cookies)
   })
 );

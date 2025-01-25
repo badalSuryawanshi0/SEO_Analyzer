@@ -4,7 +4,7 @@ import { Login } from "./pages/Login";
 import { Dashboard } from "./pages/Dashboard";
 import { AdminDashboard } from "./pages/AdminDashBoard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
-import { Signup } from "./pages/Signin";
+import { Signup } from "./pages/Signup";
 function App() {
   const router = createBrowserRouter([
     {

@@ -19,7 +19,7 @@ export function AdminDashboard() {
     const fetchParameter = async () => {
       try {
         console.log(token);
-        const response = await axios.get("http://localhost:3000/api/v1/param", {
+        const response = await axios.get("https://localhost:3000/api/v1/param", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -46,7 +46,7 @@ export function AdminDashboard() {
     console.log("Saving parameters:", parameters);
     const apiCall = async () => {
       const response = await axios.patch(
-        "http://localhost:3000/api/v1/param",
+        "https://localhost:3000/api/v1/param",
         parameters,
         {
           headers: {
@@ -75,7 +75,6 @@ export function AdminDashboard() {
     localStorage.removeItem("text");
 
     setIsAuthenticated(false);
-    console.log("Pew PEw");
   }
 
   return (
