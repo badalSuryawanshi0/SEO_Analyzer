@@ -11,7 +11,7 @@ dotenv.config();
 const app = express();
 const limiter = rateLimit({
   windowMs: 15 * 60 * 1000, //Allow 100 req in 1hr window
-  max: 100,
+  max: 200,
   message: {
     status: 429,
     message: "Too many requests, please try again after 15 minutes",

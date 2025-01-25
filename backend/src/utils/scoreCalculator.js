@@ -35,12 +35,13 @@ export const cheerioInsightScores = (cheerioInsight) => {
       ),
       links: calculateLinksScore(cheerioInsight.links, scoringCriteria.links),
       social: calculateSocialScore(cheerioInsight.social),
+      // button: cheerioInsight.button,
     };
 
     const weights = {
-      metaDescription: 0.5, //50%
-      metaKeywords: 0.1, //10%
-      socialMeta: 0.4, //40%
+      metaDescription: 0.5,
+      metaKeywords: 0.1,
+      socialMeta: 0.4,
     };
     const metaTagsScore =
       rawScores.metaDescription * weights.metaDescription +

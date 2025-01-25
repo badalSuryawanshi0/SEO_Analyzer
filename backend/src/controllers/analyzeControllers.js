@@ -32,7 +32,7 @@ export const getAnalysis = async (req, res) => {
 
     const websiteUrl = Url.url;
 
-    //check if data for this url is already available return report   ?Add constrain that fetched report date
+    //check if data for this url is already available return report
     const existingUrl = await checkUrlExits(url);
     //Get the active parameter
     const activeParameter = await getActiveParameters();

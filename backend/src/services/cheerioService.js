@@ -52,7 +52,6 @@ export const getCheerioInsight = async (url) => {
       .get()
       .filter((link) => link);
 
-    //Analyze the extracted data
     const analysis = {
       title: title || null,
       metaTags: {
@@ -68,6 +67,7 @@ export const getCheerioInsight = async (url) => {
       social: socialMediaLinks,
       ariaAttributes, //This for accessiblity
     };
+
     console.log(analysis);
     return analysis;
   } catch (error) {
