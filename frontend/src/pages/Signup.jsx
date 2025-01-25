@@ -22,7 +22,7 @@ export function Signup() {
   const handleSubmit = async (e) => {
     e.preventDefault();
     const apiCall = async () => {
-      const response = await axios.post("https://localhost:3000/api/signup", {
+      const response = await axios.post("/api/signup", {
         email,
         password,
       });

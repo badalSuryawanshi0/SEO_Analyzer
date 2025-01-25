@@ -34,7 +34,7 @@ export function Dashboard() {
         : undefined;
       try {
         const res = await axios.post(
-          "https://localhost:3000/api/analyze",
+          "/api/analyze",
           { url },
           { withCredentials: true },
           headers

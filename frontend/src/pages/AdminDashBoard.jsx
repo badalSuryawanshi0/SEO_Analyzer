@@ -19,7 +19,7 @@ export function AdminDashboard() {
     const fetchParameter = async () => {
       try {
         console.log(token);
-        const response = await axios.get("https://localhost:3000/api/v1/param", {
+        const response = await axios.get("/api/v1/param", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
@@ -45,15 +45,11 @@ export function AdminDashboard() {
   const handleSave = async () => {
     console.log("Saving parameters:", parameters);
     const apiCall = async () => {
-      const response = await axios.patch(
-        "https://localhost:3000/api/v1/param",
-        parameters,
-        {
-          headers: {
-            Authorization: `Bearer ${token}`,
-          },
-        }
-      );
+      const response = await axios.patch("/api/v1/param", parameters, {
+        headers: {
+          Authorization: `Bearer ${token}`,
+        },
+      });
       console.log(
         "Updated data that we are getting from server",
         response.data
