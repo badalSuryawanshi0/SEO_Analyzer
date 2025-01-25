@@ -20,7 +20,6 @@ export function Dashboard() {
   const [suggestion, setSuggestion] = useState([]);
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const { setIsLoading } = useContext(AuthContext);
-  console.log(result);
   const handleSubmit = async (url) => {
     const apiCall = async () => {
       const token = localStorage.getItem("token");

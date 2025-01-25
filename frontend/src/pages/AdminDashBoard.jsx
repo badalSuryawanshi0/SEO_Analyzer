@@ -18,16 +18,13 @@ export function AdminDashboard() {
   useEffect(() => {
     const fetchParameter = async () => {
       try {
-        console.log(token);
         const response = await axios.get("/api/v1/param", {
           headers: {
             Authorization: `Bearer ${token}`,
           },
         });
-        console.log(response.data);
         setParameters(response.data);
       } catch (error) {
-        console.log(error.message);
         toast.error("Error fetching Parameter");
       }
     };
@@ -43,13 +40,16 @@ export function AdminDashboard() {
   };
 
   const handleSave = async () => {
-    console.log("Saving parameters:", parameters);
     const apiCall = async () => {
-      const response = await axios.patch("/api/v1/param", parameters, {
-        headers: {
-          Authorization: `Bearer ${token}`,
-        },
-      });
+      const response = await axios.patch(
+      "/api/v1/param",
+        parameters,
+        {
+          headers: {
+            Authorization: `Bearer ${token}`,
+          },
+        }
+      );
       console.log(
         "Updated data that we are getting from server",
         response.data
