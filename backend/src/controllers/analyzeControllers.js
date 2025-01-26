@@ -19,25 +19,24 @@ import { mapDataToActiveParameter } from "../utils/mapDataActive.js";
 export const getAnalysis = async (req, res) => {
   try {
     const { url } = urlSchema.parse(req.body);
-    console.log(url);
     let user;
-    console.log(req.user);
     let Url;
     if (req.user) {
       user = req.user;
+      console.log(user);
       //link User-Url
       Url = await addUserUrl(user, url);
-      //   console.log(Url);
+      console.log("Loggin url Data", Url);
     }
 
-    const websiteUrl = Url.url;
+    const websiteUrl = Url?.url;
 
     //check if data for this url is already available return report
     const existingUrl = await checkUrlExits(url);
     //Get the active parameter
     const activeParameter = await getActiveParameters();
     //data exits for Url
-    if (existingUrl.report) {
+    if (existingUrl?.report) {
       const result = mapDataToActiveParameter(
         activeParameter,
         existingUrl.report.data
@@ -67,6 +66,7 @@ export const getAnalysis = async (req, res) => {
     const reportData = mapDataToParameter(parameters, auditData);
     console.log("Mapping data to parameters", reportData);
     //save  reportdata for Url
+    console.log(Url?.id);
     const report = await saveReport(Url.id, reportData);
     //map report data to active parameter
     const result = mapDataToActiveParameter(activeParameter, report.data);

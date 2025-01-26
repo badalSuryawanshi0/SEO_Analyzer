@@ -205,8 +205,8 @@ export async function addUserUrl(user, url) {
     });
     return Url;
   } catch (error) {
-    console.log("Error Adding url to admin", error);
-    throw new Error("Error mapping user to admin");
+    console.log("Error Adding url to user", error);
+    throw new Error("Error Connecting url to user");
   }
 }
 //Save report
