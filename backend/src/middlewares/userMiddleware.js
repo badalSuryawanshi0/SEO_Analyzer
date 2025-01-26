@@ -9,13 +9,13 @@ export const ensureAdmin = async (req, res, next) => {
     const authHeaders = req.headers.authorization;
     const token = authHeaders && authHeaders.split(" ")[1];
     if (token) {
-      jwt.verify(token, SECRET, (error, deocded) => {
+      jwt.verify(token, SECRET, (error, decoded) => {
         if (error) {
           return res.status(400).json({
             message: "Invalid token",
           });
         }
-        req.user = deocded;
+        req.user = decoded;
         //check if the user is admin
         if (req.user.isAdmin !== true) {
           return res.status(403).json({
