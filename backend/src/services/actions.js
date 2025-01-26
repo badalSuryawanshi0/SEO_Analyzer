@@ -237,7 +237,7 @@ export async function getActiveParameters() {
         isActive: true,
       },
     });
-    console.log("From action loggin all active parameter", parameter);
+    console.log("Active parameter", parameter);
     return parameter;
   } catch (error) {
     console.log("Error fetching Activeparameters", error);

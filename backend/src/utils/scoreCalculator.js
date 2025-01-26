@@ -1,5 +1,5 @@
 export const cheerioInsightScores = (cheerioInsight) => {
-  console.log("From calculate Score function", cheerioInsight);
+  console.log("From calculate cheerioInsightScores", cheerioInsight);
   try {
     const scoringCriteria = {
       metadescription: {
@@ -35,6 +35,7 @@ export const cheerioInsightScores = (cheerioInsight) => {
       ),
       links: calculateLinksScore(cheerioInsight.links, scoringCriteria.links),
       social: calculateSocialScore(cheerioInsight.social),
+      bookAppointment: cheerioInsight.hasBookAppoinment ? 1 : 0,
       // button: cheerioInsight.button,
     };
 
@@ -54,6 +55,7 @@ export const cheerioInsightScores = (cheerioInsight) => {
       headings: Math.round(rawScores.headings * 100),
       links: Math.round(rawScores.links * 100),
       social: Math.round(rawScores.social * 100),
+      bookAppointment: Math.round(rawScores.bookAppointment * 100),
     };
     return normalizedScores;
   } catch (error) {

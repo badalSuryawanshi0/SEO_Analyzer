@@ -7,7 +7,6 @@ export const mapDataToActiveParameter = (parameters, data) => {
         result[name] = data[field];
       }
     });
-    console.log("Result from MapdatatoActive parameter", result);
     return result;
   } catch (error) {
     console.log("Error mapping data to active parameter");

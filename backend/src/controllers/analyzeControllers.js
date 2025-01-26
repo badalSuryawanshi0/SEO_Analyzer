@@ -65,10 +65,12 @@ export const getAnalysis = async (req, res) => {
     const parameters = await getParameteres();
     //mapping data to their respective  parameter field
     const reportData = mapDataToParameter(parameters, auditData);
+    console.log("Mapping data to parameters", reportData);
     //save  reportdata for Url
     const report = await saveReport(Url.id, reportData);
     //map report data to active parameter
     const result = mapDataToActiveParameter(activeParameter, report.data);
+    console.log("Mapping data to active Parameter", result);
     // Combine cheerio raw and PageSpeed (extracted) data for suggestion
     const combineData = { ...cheerioInsight, ...pageSpeedInsightData };
     //get suggestion from gemini api
