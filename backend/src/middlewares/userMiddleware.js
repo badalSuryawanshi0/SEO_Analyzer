@@ -22,6 +22,7 @@ export const ensureAdmin = async (req, res, next) => {
             message: "Access denied. User is not an admin",
           });
         }
+        return next();
       });
     } else {
       const anonymousId = req.cookies?.id || null;
@@ -33,16 +34,15 @@ export const ensureAdmin = async (req, res, next) => {
       //Create new anonymous user and set cookies
       else {
         const user = await createAnonymousUser();
-        console.log("Logging the id that we are setting in cookie", user.id);
         res.cookie("id", user.id, {
           httpOnly: true,
-          secure: true, //Set this true in production
+          secure: false, //Set this true in production
           maxAge: 1 * 24 * 60 * 60 * 1000, //1 day
         });
         req.user = user;
       }
+      return next();
     }
-    next();
   } catch (error) {
     console.log("Error in userMiddleware", error);
     return res.status(500).json({

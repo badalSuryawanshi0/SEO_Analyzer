@@ -205,8 +205,8 @@ export async function addUserUrl(user, url) {
     });
     return Url;
   } catch (error) {
-    console.log("Error Adding url to admin", error);
-    throw new Error("Error mapping user to admin");
+    console.log("Error Adding url to user", error);
+    throw new Error("Error Connecting url to user");
   }
 }
 //Save report
@@ -237,7 +237,7 @@ export async function getActiveParameters() {
         isActive: true,
       },
     });
-    console.log("From action loggin all active parameter", parameter);
+    console.log("Active parameter", parameter);
     return parameter;
   } catch (error) {
     console.log("Error fetching Activeparameters", error);

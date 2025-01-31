@@ -3,7 +3,6 @@ import dotenv from "dotenv";
 dotenv.config();
 const PAGE_SPEED_URL = process.env.PAGE_SPEED_URL;
 const apikey = process.env.PAGESPEED_API_KEY;
-const timeout = process.env.PAGE_SPEED_TIMEOUT || 3000;
 if (!PAGE_SPEED_URL || !apikey) {
   throw new Error(
     "Missing required environment variables: PAGE_SPEED_URL or PAGESPEED_API_KEY"
