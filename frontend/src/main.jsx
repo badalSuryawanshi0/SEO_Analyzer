@@ -1,9 +1,10 @@
 import { StrictMode } from "react";
 import { createRoot } from "react-dom/client";
-import { Toaster, toast } from "sonner";
+import { Toaster } from "sonner";
 import "./index.css";
 import App from "./App.jsx";
 import { AuthProvider } from "./components/AuthProvider.jsx";
+import { Auth0Provider } from "@auth0/auth0-react";
 import { disableReactDevTools } from "@fvilers/disable-react-devtools";
 if (process.env.NODE_ENV === "production") disableReactDevTools();
 createRoot(document.getElementById("root")).render(

@@ -5,6 +5,7 @@ import {
 } from "../services/actions.js";
 import { z } from "zod";
 import { parameterSchema, parameterUpdateSchema } from "../utils/types.js";
+import { client } from "../config/redisClient.js";
 export const createParam = async (req, res) => {
   try {
     const parsedParameter = parameterSchema.parse(req.body);
@@ -76,7 +77,15 @@ export const getUpdatedParameters = async (req, res) => {
 
 export const getParams = async (req, res) => {
   try {
-    const parameters = await getParameteres();
+    let parameters;
+    const parametersRedis = await client.get("parameter");
+    parameters = JSON.parse(parametersRedis);
+    if (!parameters) {
+      console.log("Got parameter from db")
+      parameters = await getParameteres();
+      await client.set("parameter", JSON.stringify(parameters));
+    }
+
     return res.status(200).json(parameters);
   } catch (error) {
     return res.status(500).json({

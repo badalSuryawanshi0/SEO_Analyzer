@@ -5,10 +5,10 @@ export const AuthContext = createContext();
 //create contextProvider
 export function AuthProvider({ children }) {
   const [isAuthenticated, setIsAuthenticated] = useState(false);
-  const [isLoding, setIsLoading] = useState(false);
+  const [isLoading, setIsLoading] = useState(false);
   return (
     <AuthContext.Provider
-      value={{ isAuthenticated, setIsAuthenticated, isLoding, setIsLoading }}
+      value={{ isAuthenticated, setIsAuthenticated, isLoading, setIsLoading }}
     >
       {children}
     </AuthContext.Provider>

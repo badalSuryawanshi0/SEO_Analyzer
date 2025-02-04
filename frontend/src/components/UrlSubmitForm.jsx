@@ -5,7 +5,7 @@ import { AuthContext } from "./AuthProvider";
 
 export function UrlSubmitForm({ onSubmit }) {
   const [url, setUrl] = useState("");
-  const { isLoding } = useContext(AuthContext);
+  const { isLoading } = useContext(AuthContext);
 
   const handleSubmit = (e) => {
     e.preventDefault();
@@ -46,7 +46,7 @@ export function UrlSubmitForm({ onSubmit }) {
             </div>
 
             <div className="pt-1">
-              {isLoding ? (
+              {isLoading ? (
                 <Button disabled>
                   <Loader2 className="animate-spin" />
                   Please wait

@@ -99,15 +99,12 @@ export function Dashboard() {
           </DropdownMenu>
         ) : (
           // Login button for unauthenticated users
-          <Button>
-            <Link
-              to="/login"
-              className="inline-flex items-center px-2 py-2 rounded-lg shadow-sm text-sm font-medium focus:outline-none"
-            >
+          <Link to="/login">
+            <Button>
               <LogIn className="w-4 h-4 mr-2" />
               Admin Login
-            </Link>
-          </Button>
+            </Button>
+          </Link>
         )}
       </div>
       <UrlSubmitForm onSubmit={handleSubmit} />

@@ -15,7 +15,7 @@ import { getGeminiApiInsight } from "../services/geminiApiService.js";
 import { cheerioInsightScores } from "../utils/scoreCalculator.js";
 import { mapDataToParameter } from "../utils/mapData.js";
 import { mapDataToActiveParameter } from "../utils/mapDataActive.js";
-
+import { client } from "../config/redisClient.js";
 export const getAnalysis = async (req, res) => {
   try {
     const { url } = urlSchema.parse(req.body);
@@ -23,7 +23,6 @@ export const getAnalysis = async (req, res) => {
     let Url;
     if (req.user) {
       user = req.user;
-      console.log(user);
       //link User-Url
       Url = await addUserUrl(user, url);
       console.log("Loggin url Data", Url);
@@ -35,13 +34,32 @@ export const getAnalysis = async (req, res) => {
     const existingUrl = await checkUrlExits(url);
     //Get the active parameter
     const activeParameter = await getActiveParameters();
+
     //data exits for Url
     if (existingUrl?.report) {
+      const cacheResult = await client.get("result");
+      const cacheSuggestion = await client.get("suggestion");
+      console.log("Assala hum bhi rakhta hai bhai jaan");
+      if (cacheResult && cacheSuggestion) {
+        const suggestion = JSON.parse(cacheSuggestion);
+        const result = JSON.parse(cacheResult);
+        console.log("Redis Suggestion", suggestion);
+        console.log("Redis Result", result);
+        return res.status(200).json({
+          message: "URL analysis finished. See results below ©",
+          websiteUrl,
+          result,
+          suggestion,
+        });
+      }
       const result = mapDataToActiveParameter(
         activeParameter,
         existingUrl.report.data
       );
+      await client.set("result", JSON.stringify(result));
+
       const suggestion = existingUrl.suggestion?.data;
+      await client.set("suggestion", JSON.stringify(suggestion));
       return res.status(200).json({
         message: "URL analysis finished. See results below ©",
         websiteUrl,
@@ -61,7 +79,17 @@ export const getAnalysis = async (req, res) => {
     //Combine cheerioInsight and pageInsight data in one object
     const auditData = { ...pageSpeedInsightData, ...cheerioInsightData };
     //get all parameter
-    const parameters = await getParameteres();
+    let parameters;
+    //get all parameter from redis if available
+    const getparameters = await client.get("parameters");
+    parameters = JSON.parse(getparameters);
+
+    if (!parameters) {
+      parameters = await getParameteres();
+      console.log("Got parameter from db");
+    }
+    //Parameter are pre-configure so we can store this in redis
+    await client.set("parameters", JSON.stringify(parameters));
     //mapping data to their respective  parameter field
     const reportData = mapDataToParameter(parameters, auditData);
     console.log("Mapping data to parameters", reportData);
