@@ -30,7 +30,6 @@ export const createParam = async (req, res) => {
     });
   }
 };
-//get paramerts array
 //update parameter array in db
 
 export const getUpdatedParameters = async (req, res) => {
@@ -39,6 +38,7 @@ export const getUpdatedParameters = async (req, res) => {
     console.log("Parameters to be updated log", parameters);
 
     const updatedParameters = await updateParameters(parameters);
+    await client.set("parameters:get", JSON.stringify(updatedParameters));
 
     res.status(200).json({
       message: "Parameters updated successfully !",
@@ -78,12 +78,12 @@ export const getUpdatedParameters = async (req, res) => {
 export const getParams = async (req, res) => {
   try {
     let parameters;
-    const parametersRedis = await client.get("parameter");
+    const parametersRedis = await client.get("parameters:get");
     parameters = JSON.parse(parametersRedis);
     if (!parameters) {
-      console.log("Got parameter from db")
+      console.log("Got parameter from db");
       parameters = await getParameteres();
-      await client.set("parameter", JSON.stringify(parameters));
+      await client.set("parameters:get", JSON.stringify(parameters));
     }
 
     return res.status(200).json(parameters);

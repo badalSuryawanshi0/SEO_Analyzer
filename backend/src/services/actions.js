@@ -1,5 +1,5 @@
 import { PrismaClient } from "@prisma/client";
-import bcrypt, { compare } from "bcrypt";
+import bcrypt from "bcrypt";
 import jwt from "jsonwebtoken";
 import { AdminSchema } from "../utils/types.js";
 const Secret = process.env.SECRET;

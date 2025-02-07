@@ -37,14 +37,17 @@ export const getAnalysis = async (req, res) => {
 
     //data exits for Url
     if (existingUrl?.report) {
-      const cacheResult = await client.get("result");
-      const cacheSuggestion = await client.get("suggestion");
-      console.log("Assala hum bhi rakhta hai bhai jaan");
+      const cacheResult = await client.get(`${websiteUrl}:result`);
+      const cacheSuggestion = await client.get(`${websiteUrl}:suggestion`);
       if (cacheResult && cacheSuggestion) {
         const suggestion = JSON.parse(cacheSuggestion);
-        const result = JSON.parse(cacheResult);
-        console.log("Redis Suggestion", suggestion);
-        console.log("Redis Result", result);
+
+        console.log("Redis cache Result", cacheResult);
+
+        const result = mapDataToActiveParameter(
+          activeParameter,
+          JSON.parse(cacheResult)
+        ); // map redis-data parameters to active parameter
         return res.status(200).json({
           message: "URL analysis finished. See results below ©",
           websiteUrl,
@@ -54,12 +57,16 @@ export const getAnalysis = async (req, res) => {
       }
       const result = mapDataToActiveParameter(
         activeParameter,
-        existingUrl.report.data
+        existingUrl.report?.data
       );
-      await client.set("result", JSON.stringify(result));
+      //set data in redis for further req
+      await client.set(
+        `${websiteUrl}:result`,
+        JSON.stringify(existingUrl.report?.data)
+      );
 
       const suggestion = existingUrl.suggestion?.data;
-      await client.set("suggestion", JSON.stringify(suggestion));
+      await client.set(`${websiteUrl}:suggestion`, JSON.stringify(suggestion));
       return res.status(200).json({
         message: "URL analysis finished. See results below ©",
         websiteUrl,
