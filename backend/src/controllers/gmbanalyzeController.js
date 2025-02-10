@@ -1,76 +1,57 @@
 import puppeteer from "puppeteer-extra";
 import StealthPlugin from "puppeteer-extra-plugin-stealth";
 
-// Use the stealth plugin
 puppeteer.use(StealthPlugin());
 
-export const getgmbanalyze = async (req, res) => {
+export const getGMBAnalyze = async (req, res) => {
   const { input } = req.body;
-  console.log(input);
 
   if (!input) {
-    return res.status(400).json({ error: "input is required" });
+    return res.status(400).json({ error: "Input is required" });
   }
 
+  let browser;
   try {
-    // Launch Puppeteer
-    const browser = await puppeteer.launch({ headless: false }); // Set to true for production
+    browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
+    await page.setViewport({ width: 1280, height: 800 });
 
     // Navigate to Google Maps search result
-    await page.goto(`https://www.google.com/maps/search/${input}`, {
+    await page.goto(`https://www.google.com/maps/search/${encodeURIComponent(input)}`, {
       waitUntil: "networkidle2",
     });
 
-    await page.evaluate(async () => {
-      const sidebar = document.querySelector(".m6QErb.DxyBCb.kA9KIf.dS8AEf");
-      if (!sidebar) return;
+    //Wait for the results sidebar to appear
+    await page.waitForSelector(".Nv2PK", { timeout: 15000 });
 
-      let previousHeight = sidebar.scrollHeight;
-      let attempts = 0;
-      const maxAttempts = 10; // Adjust if needed
+    //Scroll the sidebar to load more results
+    await getScrollContent(page);
 
-      while (attempts < maxAttempts) {
-        sidebar.scrollBy(0, sidebar.scrollHeight); // Scroll down fully
-
-        await new Promise((resolve) => setTimeout(resolve, 2000)); // Wait for loading
-
-        let newHeight = sidebar.scrollHeight;
-        if (newHeight === previousHeight) {
-          break; // Stop if no new content is loaded
-        }
-        previousHeight = newHeight;
-        attempts++;
-      }
-    });
-    // Extract clinic details
+    //Extract details
     const result = await page.evaluate(() => {
       return Array.from(document.querySelectorAll(".Nv2PK")).map((el) => {
-        const name = el.querySelector(".qBF1Pd")?.innerText || "N/A";
-        const address =
-          el.querySelector(".W4Efsd span:nth-child(3)")?.innerText || "N/A";
-        const rating = el.querySelector(".MW4etd")?.innerText || "N/A";
-        const reviewCount = el.querySelector(".UY7F9")?.innerText || "N/A";
-        const profileLink = el.querySelector("a.hfpxzc")?.href || "N/A";
+        const getText = (selector) => el.querySelector(selector)?.innerText || "N/A";
+        const getHref = (selector) => el.querySelector(selector)?.href || "N/A";
 
-        // Extract actual links
-        const directionElement = el.querySelector('[data-value="Directions"]');
-        const directionLink = directionElement
-          ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(
-              name
-            )}`
+        const name = getText(".qBF1Pd");
+        const type = getText(".W4Efsd > div:first-child > span:nth-child(1) > span");
+        const address = getText(".W4Efsd span:nth-child(3)");
+        const rating = parseFloat(getText(".MW4etd")) || "N/A";
+        let reviewCount = getText(".UY7F9").replace(/[(),]/g, "") || "N/A";
+        reviewCount = parseFloat(reviewCount) || "N/A";
+
+        const profileLink = getHref("a.hfpxzc");
+        const directionLink = name !== "N/A"
+          ? `https://www.google.com/maps/dir/?api=1&destination=${encodeURIComponent(name)}`
           : "N/A";
-
-        const websiteLink =
-          el.querySelector('a[href*="http"]:not([href*="google.com"])')?.href ||
-          "N/A";
-        const bookOnlineLink =
-          el.querySelector('[aria-label*="Book"]')?.href || "N/A";
-        const callNumber = el.querySelector(".UsdlK")?.innerText || "N/A"; // Extract phone number from text
+        const websiteLink = getHref('a[href*="http"]:not([href*="google.com"])');
+        const bookOnlineLink = getHref(".A1zNzb");
+        let callNumber = getText(".UsdlK").replace(/\D/g, "") || "N/A";
 
         return {
           name,
           address,
+          type,
           rating,
           reviewCount,
           profileLink,
@@ -82,17 +63,75 @@ export const getgmbanalyze = async (req, res) => {
       });
     });
 
-    // Close the browser
     await browser.close();
-    console.log(result);
-
-    // Return the scraped data
     res.json({
       message: "Extraction successful",
-      data: result,
+      doctorsData: result,
     });
   } catch (error) {
     console.error("Error during scraping:", error);
+    if (browser) await browser.close();
     res.status(500).json({ error: "Failed to scrape the page" });
   }
 };
+
+
+async function getScrollContent(page)
+{
+  console.log("Running scroll down function")
+  const section = await page.$(".m6QErb.DxyBCb.kA9KIf.dS8AEf.XiKgde")
+  if(section !== null)
+  {
+    console.log("Found section")
+    const numScrolls =10
+    let counter = 1
+    const delayedBetweenScrollMills = 2000;
+    for await (const value of setInterval(delayedBetweenScrollMills, numScrolls))
+    {
+      if(counter > value)
+      {
+        break;  //stop scrolling for new data
+      }
+      else
+      {
+        const boundingBox = await getBoundingBox(section);
+        scrollDown(page, boundingBox)
+        counter = counter +1
+      }
+    }
+    return true
+  }
+  else
+  {
+    console.log("failed to find section")
+    return false;
+  }
+
+}
+
+//Get the bounding box for the element to be scrolled
+
+async function getBoundingBox(elementHandle) {
+   const boundingBox = await elementHandle.boundingBox()
+   if(boundingBox !== null)
+   {
+    console.log(boundingBox)
+    return boundingBox;
+   }
+   else
+   {
+    throw new Error("Failed to find the bounding box for provided element")
+   }
+}
+async function scrollDown(page, boundingBox) {
+  //move mouse to the center of the element to be scrolled
+  page.mouse.move(
+    boundingBox.x + boundingBox.width/2,
+    boundingBox.v + boundingBox.height/2
+  )
+  //use mouse scroll wheel to scroll.
+  await page.mouse.wheel({deltaY:300})
+  
+}
+
+
