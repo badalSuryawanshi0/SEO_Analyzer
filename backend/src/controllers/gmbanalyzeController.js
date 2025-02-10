@@ -19,6 +19,7 @@ export const getGMBAnalyze = async (req, res) => {
     // Navigate to Google Maps search result
     await page.goto(`https://www.google.com/maps/search/${encodeURIComponent(input)}`, {
       waitUntil: "networkidle2",
+      timeout:30000
     });
 
     //Wait for the results sidebar to appear
@@ -83,21 +84,18 @@ async function getScrollContent(page)
   if(section !== null)
   {
     console.log("Found section")
-    const numScrolls =10
-    let counter = 1
+    const numScrolls =100
     const delayedBetweenScrollMills = 2000;
-    for await (const value of setInterval(delayedBetweenScrollMills, numScrolls))
+    for( let i=0; i<numScrolls; i++)    
     {
-      if(counter > value)
-      {
-        break;  //stop scrolling for new data
-      }
-      else
-      {
-        const boundingBox = await getBoundingBox(section);
-        scrollDown(page, boundingBox)
-        counter = counter +1
-      }
+     try {
+      const boundingBox = await getBoundingBox(section)
+      await scrollDown(page,boundingBox)     //Await the scrollDown function
+      await delay(delayedBetweenScrollMills)   //Promise-base delay
+     } catch (error) {
+      console.log("Error during scrolling :", error)
+      break;
+     }
     }
     return true
   }
@@ -127,11 +125,15 @@ async function scrollDown(page, boundingBox) {
   //move mouse to the center of the element to be scrolled
   page.mouse.move(
     boundingBox.x + boundingBox.width/2,
-    boundingBox.v + boundingBox.height/2
+    boundingBox.y + boundingBox.height/2
   )
   //use mouse scroll wheel to scroll.
-  await page.mouse.wheel({deltaY:300})
+  await page.mouse.wheel({deltaY: 300})
   
 }
 
-
+// delay function 
+function delay(ms)
+{
+ return new Promise((resolve) => setTimeout(resolve, ms));
+}
