@@ -108,6 +108,9 @@ export function Dashboard() {
         )}
       </div>
       <UrlSubmitForm onSubmit={handleSubmit} />
+      <Link to='/gmb'>
+      <Button variant="link">Get GMB Analysis</Button>
+      </Link>
       {result && suggestion == false ? (
         <SEOPreview />
       ) : (
