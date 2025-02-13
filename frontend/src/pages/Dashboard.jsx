@@ -1,4 +1,4 @@
-import React, { useContext, useState } from "react";
+import React, { useContext, useState, useCallback } from "react";
 import { UrlSubmitForm } from "@/components/UrlSubmitForm";
 import { SEOAnalysisResult } from "@/components/ResultsTable";
 import {
@@ -14,13 +14,20 @@ import { Button } from "@/components/ui/button";
 import axios from "axios";
 import { toast } from "sonner";
 import { SEOPreview } from "@/components/SeoPreview";
+import { CSVLink } from "react-csv";
+import { Input } from "@/components/ui/input";
+import { SearchIcon } from "lucide-react";
+
 export function Dashboard() {
   const [url, setUrl] = useState("");
   const [result, setResult] = useState([]);
   const [suggestion, setSuggestion] = useState([]);
   const { isAuthenticated, setIsAuthenticated } = useContext(AuthContext);
   const { setIsLoading } = useContext(AuthContext);
-  const handleSubmit = async (url) => {
+  const [searchTerm, setSearchTerm] = useState("");
+  const [data, setData] = useState([]);
+
+  const handleSubmit = useCallback(async (url) => {
     const apiCall = async () => {
       const token = localStorage.getItem("token");
       setIsLoading(true);
@@ -44,7 +51,6 @@ export function Dashboard() {
         return res.data;
       } catch (error) {
         if (error.response?.status === 429) {
-          //error msg for rate-limit
           throw new Error(error.response.data.message);
         }
         throw new Error(error.response?.data?.message || "Please try again");
@@ -59,22 +65,27 @@ export function Dashboard() {
       error: (error) =>
         `${error.message || "An error occurred. Please try again"}`,
     });
-  };
+  }, [setIsLoading]);
+
   const handleLogout = () => {
     setIsAuthenticated(false);
     localStorage.clear();
   };
+
+  const getCsvFilename = () => {
+    return `analysis-${new Date().toISOString().slice(0, 10)}.csv`;
+  };
+
   return (
-    <div className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8">
-      {/* Admin Login Button */}
+    <div className="w-full mx-auto px-4 sm:px-6 lg:px-8">
       <div className="flex justify-end mb-6 gap-4">
         {isAuthenticated ? (
-          // Dropdown for authenticated users
           <DropdownMenu>
             <DropdownMenuTrigger asChild>
               <Button
                 variant="ghost"
                 className="inline-flex items-center border border-gray-300"
+                aria-label="User settings"
               >
                 <UserCog className="mr-2" />
                 <ChevronDown className="w-4 h-4" />
@@ -89,7 +100,7 @@ export function Dashboard() {
                   </Link>
                 </Button>
               </DropdownMenuItem>
-              <DropdownMenuItem onClick={handleLogout}>
+              <DropdownMenuItem onClick={handleLogout} aria-label="Logout">
                 <Button variant="ghost">
                   <LogOut className="w-4 h-4 mr-2" />
                   Logout
@@ -98,7 +109,6 @@ export function Dashboard() {
             </DropdownMenuContent>
           </DropdownMenu>
         ) : (
-          // Login button for unauthenticated users
           <Link to="/login">
             <Button>
               <LogIn className="w-4 h-4 mr-2" />

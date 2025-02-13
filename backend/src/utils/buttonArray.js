@@ -45,4 +45,5 @@ export const buttonNames = [
   "book meeting",
   "book session",
   "book a demo",
+  "Book Clinic Visit"
 ];

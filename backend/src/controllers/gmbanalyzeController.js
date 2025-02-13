@@ -56,10 +56,9 @@ export const getGMBAnalyze = async (req, res) => {
            address: getText(".Io6YTe"), // Updated Address
            rating: parseFloat(getText(".F7nice span[aria-hidden='true']")) || "N/A",
            reviewCount: parseFloat(getText('.F7nice span[aria-label]:nth-child(1)')?.replace(/[(),]/g, "")) || "N/A",
-          //  profileLink: getHref('a.hfpxzc'),   //fix
            directionEnabel: document.querySelector('button[aria-label^="Directions"]')? true : false,  
            websiteLink: getHref('a.CsEnBe'),  
-           bookOnlineLink: getHref('DkEaL a.A1zNzb'), 
+           bookOnlineLink: getHref('div.KDpVjd.yMo4fd.YMucub a.A1zNzb'),  //'a.A1zNzb'
            callNumber: getHref("a[aria-label='Call phone number']").replace("tel:",""),
            openHours: getText(".G8aQO")
          };
@@ -82,27 +81,23 @@ export const getGMBAnalyze = async (req, res) => {
 };
 
 
-async function getScrollContent(page)
-{
-  console.log("Running scroll down function")
-  const section = await page.$(".m6QErb.DxyBCb.kA9KIf.dS8AEf.XiKgde")
-  if(section !== null)
-  {
-    console.log("Found section")
-    const delayBetweenScrolls =2000; 
+async function getScrollContent(page) {
+  console.log('Running scroll down function');
+  const section = await page.$('.m6QErb.DxyBCb.kA9KIf.dS8AEf.XiKgde');
+  if (section !== null) {
+    console.log('Found section');
+    const delayBetweenScrolls = 1000; // Reduced delay for faster scrolling
     let previousContentLength = 0;
     let newContentLength = 0;
-    let scrollAttempts =0;
-    const maxScrollAttempts = 3;  //Maximum Scroll attempts to avoid infinite loops
-    while (scrollAttempts < maxScrollAttempts)
-    {
-      try{
-        //get the current number of loaded items
-        previousContentLength = await page.evaluate(()=>
-        {
-          return document.querySelectorAll('.Nv2PK').length
-        })
-        //Scroll down
+    let scrollAttempts = 0;
+    const maxScrollAttempts = 20; // Increased attempts for thorough scrolling
+    while (scrollAttempts < maxScrollAttempts) {
+      try {
+        // Get the current number of loaded items
+        previousContentLength = await page.evaluate(() =>
+          document.querySelectorAll('.Nv2PK').length
+        );
+        // Scroll down
         const boundingBox = await getBoundingBox(section);
         await scrollDown(page, boundingBox)
 
@@ -134,6 +129,7 @@ async function getScrollContent(page)
   }
 
 }
+
 //Get the bounding box for the element to be scrolled
 async function getBoundingBox(elementHandle) {
    const boundingBox = await elementHandle.boundingBox()  //Return bounding box of element relative to frame

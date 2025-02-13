@@ -5,7 +5,6 @@ import { Dashboard } from "./pages/Dashboard";
 import { AdminDashboard } from "./pages/AdminDashBoard";
 import { ProtectedRoute } from "./components/ProtectedRoute";
 import { Signup } from "./pages/Signup";
-import Search from "./pages/GmbDashboard";
 import GmbSearch from "./pages/GmbDashboard";
 function App() {
   const router = createBrowserRouter([
