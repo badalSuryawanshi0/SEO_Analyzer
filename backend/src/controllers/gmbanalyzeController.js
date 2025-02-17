@@ -33,44 +33,91 @@ export const getGMBAnalyze = async (req, res) => {
    
      // Extract profile links and elements
      const doctorCards = await page.$$(".Nv2PK");
-
      let results = [];
- 
+     const seenProfiles = new Set(); // Track unique profiles
+
      for (const card of doctorCards) {
+       // Get gmb link before clicking on card
+       let link = await card.$eval('a.hfpxzc', el => el.href).catch(() => null);
+       
+       // Skip if we've already processed this profile
+       if (link && seenProfiles.has(link)) {
+         console.log("Skipping duplicate profile:", link);
+         continue;
+       }
+       
+       // Add to seen profiles if it's a valid link
+       if (link) {
+         seenProfiles.add(link);
+       }
+       
        // Click on each card to open the side modal
        await card.click();
-       console.log("Clicked on card")
-       await delay(2000)
- 
-       // Wait for the side modal to appear
-       await page.waitForSelector(".DkEaL", { timeout: 10000 }).catch(() => console.log("No modal found"));
- 
+       console.log("Clicked on card");
+       await delay(3000); // Increased delay after click
+
+       // Wait for the side modal to appear and content to load
+       await page.waitForSelector(".DkEaL", { timeout: 10000 })
+         .catch(() => console.log("No modal found"));
+       
+       // Additional delay to ensure content is fully loaded
+       await delay(2000);
+
        // Extract details from the modal
-       const doctorDetails = await page.evaluate(() => {
+       const doctorDetails = await page.evaluate((profileLink) => {
          const getText = (selector) => document.querySelector(selector)?.innerText.trim() || "N/A";
          const getHref = (selector) => document.querySelector(selector)?.href || "N/A";
- 
+
          return {
            name: getText(".DUwDvf"),
+           profileLink: profileLink,
            type: getText("button.DkEaL"),
-           address: getText(".Io6YTe"), // Updated Address
+           address: getText(".Io6YTe"),
            rating: parseFloat(getText(".F7nice span[aria-hidden='true']")) || "N/A",
            reviewCount: parseFloat(getText('.F7nice span[aria-label]:nth-child(1)')?.replace(/[(),]/g, "")) || "N/A",
-           directionEnabel: document.querySelector('button[aria-label^="Directions"]')? true : false,  
-           websiteLink: getHref('a.CsEnBe'),  
-           bookOnlineLink: getHref('div.KDpVjd.yMo4fd.YMucub a.A1zNzb'),  //'a.A1zNzb'
-           callNumber: getHref("a[aria-label='Call phone number']").replace("tel:",""),
-           openHours: getText(".G8aQO")
+           directionEnabel: document.querySelector('button[aria-label^="Directions"]') ? true : false,
+           websiteLink: getHref('a.CsEnBe'),
+           bookOnlineLink: getHref('div.KDpVjd.yMo4fd.YMucub a.A1zNzb'),
+           callNumber: getHref("a[aria-label='Call phone number']").replace("tel:", ""),
+           openHours: getText(`.y0skZc td.mxowUb[role="text"]`).split('\n')[0]
          };
+       }, link);
+
+       // Calculate listing score
+       const calculateScore = (details) => {
+         let score = 0;
+         const maxScore = 150;
+         
+         // Essential fields (50% of total score)
+         if (details.name !== "N/A") score += 5;
+         if (details.address !== "N/A") score += 10;
+         if (details.type !== "N/A") score += 5;
+         
+         // Important fields (30% of total score)
+         if (details.rating !== "N/A") score += 10;
+         if (details.reviewCount !== "N/A") score += 10;
+         if (details.websiteLink !== "N/A") score += 15;
+         if (details.callNumber !== "N/A") score += 10;
+         
+         // Additional fields (20% of total score)
+         if (details.openHours !== "N/A") score += 10;
+         if (details.directionEnabel) score += 5;
+         if (details.bookOnlineLink !== "N/A") score += 20;
+         
+         return score;
+       };
+
+       const listingScore = calculateScore(doctorDetails);
+       results.push({
+         ...doctorDetails,
+         score: listingScore
        });
- 
-       results.push(doctorDetails);
- 
+
        // Close modal before clicking the next card
        await page.keyboard.press("Escape");
        await delay(1000);
      }
- 
+
      res.json({ message: "Extraction successful", doctorsData: results });
    } catch (error) {
      console.error("Error during scraping:", error);
@@ -90,7 +137,7 @@ async function getScrollContent(page) {
     let previousContentLength = 0;
     let newContentLength = 0;
     let scrollAttempts = 0;
-    const maxScrollAttempts = 20; // Increased attempts for thorough scrolling
+    const maxScrollAttempts = 200; // Increased attempts for thorough scrolling
     while (scrollAttempts < maxScrollAttempts) {
       try {
         // Get the current number of loaded items

@@ -58,7 +58,7 @@ const GmbSearch = () => {
       )
     );
     if (isSortedByRating) {
-      results = results.sort((a, b) => a.rating - b.rating); // Sort by rating
+      results = results.sort((a, b) => b.rating - a.rating);
     }
     setFilteredData(results);
   }, [searchTerm, data, isSortedByRating]);
@@ -138,6 +138,7 @@ const GmbSearch = () => {
                 <TableRow>
                   <TableHead>Name</TableHead>
                   <TableHead>Type</TableHead>
+                  <TableHead>Profile Link</TableHead>
                   <TableHead>Address</TableHead>
                   <TableHead className="text-center">
                     Rating
@@ -155,6 +156,7 @@ const GmbSearch = () => {
                   <TableHead className="text-center">Booking Link</TableHead>
                   <TableHead className="text-center">Website</TableHead>
                   <TableHead className="text-center">Direction Enable</TableHead>
+                  <TableHead className="text-center">Score</TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -174,6 +176,13 @@ const GmbSearch = () => {
                         {doctor.name}
                       </TableCell>
                       <TableCell>{doctor.type}</TableCell>
+                      <TableCell>{<a href={doctor.profileLink}
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="text-blue-600 hover:underline"
+                      >
+                        {truncateText(doctor.profileLink, 20)}
+                        </a>}</TableCell>
                       <TableCell className="max-w-xs truncate">
                         {doctor.address}
                       </TableCell>
@@ -229,6 +238,9 @@ const GmbSearch = () => {
                         ) : (
                           <MapPinCheckInside color="green" />
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {doctor.score}
                       </TableCell>
                     </TableRow>
                   ))
