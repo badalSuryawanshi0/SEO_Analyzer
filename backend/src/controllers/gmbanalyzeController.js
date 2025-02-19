@@ -14,7 +14,7 @@ export const getGMBAnalyze = async (req, res) => {
 
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: true });
+    browser = await puppeteer.launch({ headless: false });
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
 
@@ -34,7 +34,7 @@ export const getGMBAnalyze = async (req, res) => {
      // Extract profile links and elements
      const doctorCards = await page.$$(".Nv2PK");
      let results = [];
-     const seenProfiles = new Set(); // Track unique profiles
+     const seenProfiles = new Set(); // Track unique profiles so we can ignore the duplicate profiles
 
      for (const card of doctorCards) {
        // Get gmb link before clicking on card
@@ -82,24 +82,23 @@ export const getGMBAnalyze = async (req, res) => {
            openHours: getText(`.y0skZc td.mxowUb[role="text"]`).split('\n')[0]
          };
        }, link);
-
+        
        // Calculate listing score
        const calculateScore = (details) => {
          let score = 0;
-         const maxScore = 150;
          
-         // Essential fields (50% of total score)
+         
          if (details.name !== "N/A") score += 5;
          if (details.address !== "N/A") score += 10;
          if (details.type !== "N/A") score += 5;
          
-         // Important fields (30% of total score)
+        
          if (details.rating !== "N/A") score += 10;
          if (details.reviewCount !== "N/A") score += 10;
          if (details.websiteLink !== "N/A") score += 15;
          if (details.callNumber !== "N/A") score += 10;
          
-         // Additional fields (20% of total score)
+        
          if (details.openHours !== "N/A") score += 10;
          if (details.directionEnabel) score += 5;
          if (details.bookOnlineLink !== "N/A") score += 20;
@@ -108,6 +107,17 @@ export const getGMBAnalyze = async (req, res) => {
        };
 
        const listingScore = calculateScore(doctorDetails);
+       if (doctorDetails.websiteLink && doctorDetails.websiteLink !== 'N/A') {
+         try {
+             const extractedData = await extractData(doctorDetails.websiteLink);
+             doctorDetails.bookingProcess = extractedData;
+         } catch (error) {
+             doctorDetails.bookingProcess = { error: error.message };
+         }
+       }
+       else {
+        doctorDetails.bookingProcess = "N/A"
+       }
        results.push({
          ...doctorDetails,
          score: listingScore
@@ -137,7 +147,7 @@ async function getScrollContent(page) {
     let previousContentLength = 0;
     let newContentLength = 0;
     let scrollAttempts = 0;
-    const maxScrollAttempts = 200; // Increased attempts for thorough scrolling
+    const maxScrollAttempts = 1; // Increased attempts for thorough scrolling
     while (scrollAttempts < maxScrollAttempts) {
       try {
         // Get the current number of loaded items
@@ -206,3 +216,71 @@ function delay(ms)
 {
  return new Promise((resolve) => setTimeout(resolve, ms));
 }
+
+//Use proxy 
+//puppeteer cluster
+//function to extract data from external website
+/**
+ * Extract data from external website
+ * @param {string} url - The url of the website to extract data from
+ * @returns {Promise<object>} - An object with the following properties:
+ * - hasForm: boolean - Whether the website has a form to book an appointment
+ * - hasTimeSlot: boolean - Whether the website has time slots for booking an appointment
+ * - external: boolean - Whether the website has an external link to book an appointment
+ * - link: string - The external link to book an appointment if present
+ */
+export const extractData = async (url) => {
+   console.log("Analyzing booking options for:", url);
+  const browser = await puppeteer.launch({ headless: false });
+  const page = await browser.newPage();
+
+  try {
+    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
+
+    const buttonFound = await page.evaluate(() => {
+      const buttonTexts = ['book appointment', 'schedule meeting', 'reserve slot', 'make appointment', 
+                          'book', 'schedule', 'appointment', 'reserve'];
+      const buttons = Array.from(document.querySelectorAll('button, a'));
+      return buttons.some(btn => 
+        buttonTexts.some(text => btn.textContent.toLowerCase().includes(text))
+      );
+    });
+
+    if (!buttonFound) {
+      return { hasForm: false, hasTimeslot: false };
+    }
+
+    await page.evaluate(() => {
+      const buttons = Array.from(document.querySelectorAll('button, a'));
+      const buttonTexts = ['book appointment', 'schedule meeting', 'reserve slot', 'make appointment', 
+                          'book', 'schedule', 'appointment', 'reserve'];
+      const bookButton = buttons.find(btn =>
+        buttonTexts.some(text => btn.textContent.toLowerCase().includes(text))
+      );
+      if (bookButton) bookButton.click();
+    });
+
+    await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 }).catch(() => {});
+    await delay(2000);
+
+    const result = await page.evaluate(() => {
+      const hasForm = !!document.querySelector('form[action*="book"], form[action*="schedule"], form[action*="reserve"]');
+      const hasTimeslot = !!(
+        document.querySelector('.time-slot, [id*="time"], [class*="time"]') ||
+        document.querySelector('.calendar, [id*="calendar"], [class*="calendar"]') ||
+        document.querySelector('input[type="date"]') 
+        // ||document.querySelector('a[href*="appointment"]')
+      );
+
+      return { hasForm, hasTimeslot };
+    });
+
+    return result;
+
+  } catch (error) {
+    console.error(`Error analyzing ${url}:`, error);
+    throw new Error("Failed to analyze booking options");
+  } finally {
+    await browser.close();
+  }
+};
