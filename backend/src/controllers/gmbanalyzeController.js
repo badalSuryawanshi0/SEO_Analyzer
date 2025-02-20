@@ -93,31 +93,34 @@ export const getGMBAnalyze = async (req, res) => {
          if (details.type !== "N/A") score += 5;
          
         
-         if (details.rating !== "N/A") score += 10;
+         if (details.rating !== "N/A") score += 5;
          if (details.reviewCount !== "N/A") score += 10;
-         if (details.websiteLink !== "N/A") score += 15;
+         if (details.websiteLink !== "N/A") score += 10;
          if (details.callNumber !== "N/A") score += 10;
          
         
          if (details.openHours !== "N/A") score += 10;
          if (details.directionEnabel) score += 5;
-         if (details.bookOnlineLink !== "N/A") score += 20;
+         if (details.bookOnlineLink !== "N/A") score += 15;
+         if(details.bookingProcess !=="N/A") score += 15;
          
          return score;
        };
 
-       const listingScore = calculateScore(doctorDetails);
        if (doctorDetails.websiteLink && doctorDetails.websiteLink !== 'N/A') {
          try {
              const extractedData = await extractData(doctorDetails.websiteLink);
+             console.log("Loggin the data from extractedData", extractData)
              doctorDetails.bookingProcess = extractedData;
          } catch (error) {
              doctorDetails.bookingProcess = { error: error.message };
+            
          }
        }
        else {
         doctorDetails.bookingProcess = "N/A"
        }
+       const listingScore = calculateScore(doctorDetails);
        results.push({
          ...doctorDetails,
          score: listingScore
@@ -147,7 +150,7 @@ async function getScrollContent(page) {
     let previousContentLength = 0;
     let newContentLength = 0;
     let scrollAttempts = 0;
-    const maxScrollAttempts = 1; // Increased attempts for thorough scrolling
+    const maxScrollAttempts = 2; // Increased attempts for thorough scrolling
     while (scrollAttempts < maxScrollAttempts) {
       try {
         // Get the current number of loaded items
@@ -217,26 +220,19 @@ function delay(ms)
  return new Promise((resolve) => setTimeout(resolve, ms));
 }
 
-//Use proxy 
-//puppeteer cluster
-//function to extract data from external website
-/**
- * Extract data from external website
- * @param {string} url - The url of the website to extract data from
- * @returns {Promise<object>} - An object with the following properties:
- * - hasForm: boolean - Whether the website has a form to book an appointment
- * - hasTimeSlot: boolean - Whether the website has time slots for booking an appointment
- * - external: boolean - Whether the website has an external link to book an appointment
- * - link: string - The external link to book an appointment if present
+/* Extract booking options from a given URL.
+ * @param {string} url - The URL of the website to analyze for booking options.
+ * @returns {Promise<object>} - An object indicating the presence of booking forms and timeslots.
  */
 export const extractData = async (url) => {
-   console.log("Analyzing booking options for:", url);
+  console.log("Analyzing booking options for:", url);
   const browser = await puppeteer.launch({ headless: false });
   const page = await browser.newPage();
 
   try {
-    await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
-
+    // Navigate to the URL and wait for the page to load
+    await page.goto(url, { waitUntil: 'networkidle2', timeout: 30000 });
+    // Search for a "Book Now" button
     const buttonFound = await page.evaluate(() => {
       const buttonTexts = ['book appointment', 'schedule meeting', 'reserve slot', 'make appointment', 
                           'book', 'schedule', 'appointment', 'reserve'];
@@ -246,10 +242,39 @@ export const extractData = async (url) => {
       );
     });
 
+    // If no button is found, return false for both options
     if (!buttonFound) {
-      return { hasForm: false, hasTimeslot: false };
-    }
+      // Initial check for booking options on the page
+    const initialCheck = await page.evaluate(() => {
+      const hasForm = !!(
+        document.querySelector('form[action*="book"]:not([action*="facebook"]), form[action*="schedule"], form[action*="reserve"]') ||
+        document.querySelector('form[action*="slot"], form[action*="appointment"]')
+      );
 
+      const hasTimeslot = !!(
+        document.querySelector('.booking-time-slot, [id*="booking-time"], [class*="booking-time"]') ||
+        document.querySelector('.booking-calendar, [id*="booking-calendar"], [class*="booking-calendar"]') ||
+        document.querySelector('input[type="date"][name*="booking"], input[type="datetime-local"][name*="booking"]') ||
+        document.querySelector('[href*="booking/slot/reserve"]') ||
+        document.querySelector('[href*="booking/calendar"]') ||
+        document.querySelector('div[class*="booking-slot"], a[class*="booking-slot"]') ||
+        document.querySelector('div:contains("BOOKING SLOTS AVAILABLE"), div[class*="booking-slots-available"]') ||
+        document.querySelector('div[class*="booking-time"]:not([class*="timeline"])') ||
+        document.querySelector('[href*="booking/consultation"], [class*="booking-consultation"]')
+      );
+
+      return { hasForm, hasTimeslot };
+    });
+
+    // Return early if booking options are found
+    if (initialCheck.hasForm || initialCheck.hasTimeslot) {
+      return initialCheck;
+    }  
+    return { hasForm: false, hasTimeslot: false };
+    }
+    
+
+    // Simulate a click on the "Book Now" button
     await page.evaluate(() => {
       const buttons = Array.from(document.querySelectorAll('button, a'));
       const buttonTexts = ['book appointment', 'schedule meeting', 'reserve slot', 'make appointment', 
@@ -260,18 +285,16 @@ export const extractData = async (url) => {
       if (bookButton) bookButton.click();
     });
 
+    // Wait for navigation after the button click
     await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 }).catch(() => {});
-    await delay(2000);
 
+    // Final check for booking options
     const result = await page.evaluate(() => {
-      const hasForm = !!document.querySelector('form[action*="book"], form[action*="schedule"], form[action*="reserve"]');
+      const hasForm = !!document.querySelector('form[action*="book"]:not([action*="facebook"]), form[action*="formResponse"],form[action*="schedule"], form[action*="reserve"], form[action*="appointment"], form[action*="consult"], form[action*="register"]');
       const hasTimeslot = !!(
-        document.querySelector('.time-slot, [id*="time"], [class*="time"]') ||
-        document.querySelector('.calendar, [id*="calendar"], [class*="calendar"]') ||
-        document.querySelector('input[type="date"]') 
-        // ||document.querySelector('a[href*="appointment"]')
-      );
-
+          document.querySelector('.time-slot:not([class*="hidden"]), [class*="time-slot"]:not([class*="hidden"]), [class*="timeslot"]:not([class*="hidden"]), [id*="timeslot"]:not([class*="hidden"]), .appointment-time:not(.hidden), [class*="available-time"]:not(.hidden)') ||
+          document.querySelector('.slot-available:not(.hidden),li.holdAppointment input[type="radio"], [class*="available-slot"]:not(.hidden), [class*="slot-available"]:not(.hidden), [class*="time-slot-available"]:not(.hidden), [class*="slot-open"]:not(.hidden), [class*="appointment-slot"]:not(.hidden)')
+        );
       return { hasForm, hasTimeslot };
     });
 
@@ -279,8 +302,9 @@ export const extractData = async (url) => {
 
   } catch (error) {
     console.error(`Error analyzing ${url}:`, error);
-    throw new Error("Failed to analyze booking options");
+    return { error: "Failed to analyze booking options" };
   } finally {
     await browser.close();
   }
 };
+

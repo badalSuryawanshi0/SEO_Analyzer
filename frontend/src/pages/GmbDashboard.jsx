@@ -28,6 +28,7 @@ const GmbSearch = () => {
   const [searchTerm, setSearchTerm] = useState("");
   const [filteredData, setFilteredData] = useState([]);
   const [isSortedByRating, setIsSortedByRating] = useState(false); // New state for sorting
+  const  [isSortedByScore, setIsSortedByScore] = useState(false); // New state for sorting
   const { isLoading, setIsLoading } = useContext(AuthContext);
 
   const fetchData = async () => {
@@ -58,10 +59,13 @@ const GmbSearch = () => {
       )
     );
     if (isSortedByRating) {
-      results = results.sort((a, b) => b.rating - a.rating);
+      results = results.sort((a, b) => a.rating - b.rating);
+    }
+    if (isSortedByScore) {
+      results = results.sort((a, b) => a.score - b.score);
     }
     setFilteredData(results);
-  }, [searchTerm, data, isSortedByRating]);
+  }, [searchTerm, data, isSortedByRating, isSortedByScore]);
 
   const getCsvFilename = () => {
     const date = new Date();
@@ -155,8 +159,17 @@ const GmbSearch = () => {
                   <TableHead>Hours</TableHead>
                   <TableHead className="text-center">Booking Link</TableHead>
                   <TableHead className="text-center">Website</TableHead>
+                  <TableHead className="text-center">On-site BookingProcess</TableHead>
                   <TableHead className="text-center">Direction Enable</TableHead>
-                  <TableHead className="text-center">Score</TableHead>
+                  <TableHead className="text-center">Score
+                    <button onClick={()=> setIsSortedByScore(!isSortedByScore)}>
+                      {isSortedByScore ?(
+                        <LucideSortAsc className="h-4 w-4 inline-block"/>
+                      ):(
+                        <LucideSortDesc className="h-4 w-4 inline-block" />
+                      )}
+                    </button>
+                  </TableHead>
                 </TableRow>
               </TableHeader>
               <TableBody>
@@ -228,6 +241,9 @@ const GmbSearch = () => {
                         ) : (
                           "N/A"
                         )}
+                      </TableCell>
+                      <TableCell>
+                        {doctor.bookingProcess !== "N/A" ? (doctor.bookingProcess.hasForm ? "Form available" : doctor.bookingProcess.hasTimeslot ? "Timeslot available" : "UNK"):("N/A")}
                       </TableCell>
                       <TableCell className="text-center">
                         {doctor.directionEnabel !== true ? (

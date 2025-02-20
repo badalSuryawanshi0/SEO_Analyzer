@@ -13,6 +13,37 @@ export const extractData = async (req, res) => {
   try {
     await page.goto(url, { waitUntil: 'networkidle0', timeout: 30000 });
 
+    const initialCheck = await page.evaluate(() => {
+      const hasForm = !!(
+        document.querySelector('form[action*="book"]:not([action*="facebook"]), form[action*="schedule"], form[action*="reserve"]') ||
+        document.querySelector('form[action*="slot"], form[action*="appointment"]')
+      );
+
+      const hasTimeslot = !!(
+        // Time slots and calendar elements
+        document.querySelector('.time-slot, [id*="time"], [class*="time"]') ||
+        document.querySelector('.calendar, [id*="calendar"], [class*="calendar"]') ||
+        document.querySelector('input[type="date"]') ||
+        // Specific slot-based selectors from the example
+        document.querySelector('[href*="slot/reserve"]') ||
+        document.querySelector('[href*="calendar"]') ||
+        // Look for time patterns in text content
+        document.querySelector('div[class*="slot"], a[class*="slot"]') ||
+        // Look for slot availability text
+        document.querySelector('div:contains("SLOTS AVAILABLE"), div[class*="slots-available"]') ||
+        // Time display elements
+        document.querySelector('div[class*="time"]:not([class*="timeline"])') ||
+        // Consultation or appointment related elements
+        document.querySelector('[href*="consultation"], [class*="consultation"]')
+      );
+
+      return { hasForm, hasTimeslot };
+    });
+
+    if (initialCheck.hasForm || initialCheck.hasTimeslot) {
+      return res.json(initialCheck);
+    }
+
     const buttonFound = await page.evaluate(() => {
       const buttonTexts = ['book appointment', 'schedule meeting', 'reserve slot', 'make appointment', 
                           'book', 'schedule', 'appointment', 'reserve'];
@@ -47,9 +78,6 @@ export const extractData = async (req, res) => {
         document.querySelector('input[type="date"]') ||
         document.querySelector('a[href*="appointment"]')
       );
-
-    
-
 
       return { hasForm, hasTimeslot };
     });
