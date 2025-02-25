@@ -14,7 +14,7 @@ export const getGMBAnalyze = async (req, res) => {
 
   let browser;
   try {
-    browser = await puppeteer.launch({ headless: false });
+    browser = await puppeteer.launch({ headless: true });
     const page = await browser.newPage();
     await page.setViewport({ width: 1280, height: 800 });
 
@@ -106,12 +106,44 @@ export const getGMBAnalyze = async (req, res) => {
          
          return score;
        };
+       const thirdPartyDoctorSites = [
+        "https://www.practo.com/",
+        "https://www.apollohospitals.com/",
+        "https://www.healthplix.com/",
+        "https://remedoapp.com/",
+        "https://www.zocdoc.com/",
+        "https://www.doctolib.com/",
+        "https://www.lybrate.com/",
+        "https://www.docplanner.com/",
+        "https://www.vezeeta.com/",
+        "https://www.mfine.co/",
+        "https://www.1mg.com/",
+        "https://www.amwell.com/",
+       " https://www.eka.care/",
+       "https://www.docgenie.in/",
+       "https://www.narayanahealth.org/",
+       "https://healthfirstcenter.in/",
+       "https://navedahealthcare.com/",
+       "https://www.apollo247.com/"
+      ];
 
        if (doctorDetails.websiteLink && doctorDetails.websiteLink !== 'N/A') {
          try {
-             const extractedData = await extractData(doctorDetails.websiteLink);
-             console.log("Loggin the data from extractedData", extractData)
-             doctorDetails.bookingProcess = extractedData;
+          //intialize booking process
+          doctorDetails.bookingProcess = {};
+          //Check if the webiste link is third party ?
+            const validate = thirdPartyDoctorSites.find((site)=>doctorDetails.websiteLink.includes(site))
+            if(validate && validate !== undefined)
+            {
+              doctorDetails.bookingProcess.thirdParty = true
+              doctorDetails.bookingProcess.link = doctorDetails.websiteLink
+            }
+
+           else{
+            const extractedData = await extractData(doctorDetails.websiteLink);
+            console.log("Loggin the data from extractedData", extractData)
+            doctorDetails.bookingProcess = extractedData;
+           }
          } catch (error) {
              doctorDetails.bookingProcess = { error: error.message };
             
@@ -146,11 +178,11 @@ async function getScrollContent(page) {
   const section = await page.$('.m6QErb.DxyBCb.kA9KIf.dS8AEf.XiKgde');
   if (section !== null) {
     console.log('Found section');
-    const delayBetweenScrolls = 1000; // Reduced delay for faster scrolling
+    const delayBetweenScrolls = 1000; 
     let previousContentLength = 0;
     let newContentLength = 0;
     let scrollAttempts = 0;
-    const maxScrollAttempts = 2; // Increased attempts for thorough scrolling
+    const maxScrollAttempts = 20; // Increased attempts for thorough scrolling
     while (scrollAttempts < maxScrollAttempts) {
       try {
         // Get the current number of loaded items
@@ -221,12 +253,12 @@ function delay(ms)
 }
 
 /* Extract booking options from a given URL.
- * @param {string} url - The URL of the website to analyze for booking options.
- * @returns {Promise<object>} - An object indicating the presence of booking forms and timeslots.
+ * @param  url - The URL of the website to analyze for booking options.
+ * @returns - An object indicating the presence of booking forms and timeslots.
  */
 export const extractData = async (url) => {
   console.log("Analyzing booking options for:", url);
-  const browser = await puppeteer.launch({ headless: false });
+  const browser = await puppeteer.launch({ headless: true });
   const page = await browser.newPage();
 
   try {
@@ -252,13 +284,12 @@ export const extractData = async (url) => {
       );
 
       const hasTimeslot = !!(
-        document.querySelector('.booking-time-slot, [id*="booking-time"], [class*="booking-time"]') ||
+        document.querySelector('.booking-time-slot,form[action*="formResponse"], [id*="booking-time"], [class*="booking-time"]') ||
         document.querySelector('.booking-calendar, [id*="booking-calendar"], [class*="booking-calendar"]') ||
         document.querySelector('input[type="date"][name*="booking"], input[type="datetime-local"][name*="booking"]') ||
         document.querySelector('[href*="booking/slot/reserve"]') ||
         document.querySelector('[href*="booking/calendar"]') ||
         document.querySelector('div[class*="booking-slot"], a[class*="booking-slot"]') ||
-        document.querySelector('div:contains("BOOKING SLOTS AVAILABLE"), div[class*="booking-slots-available"]') ||
         document.querySelector('div[class*="booking-time"]:not([class*="timeline"])') ||
         document.querySelector('[href*="booking/consultation"], [class*="booking-consultation"]')
       );
@@ -287,7 +318,34 @@ export const extractData = async (url) => {
 
     // Wait for navigation after the button click
     await page.waitForNavigation({ waitUntil: 'networkidle0', timeout: 5000 }).catch(() => {});
-
+     // Check if Book button redirect to third-Party link
+     const thirdPartyDoctorSites = [
+      "https://www.practo.com/",
+      "https://www.apollohospitals.com/",
+      "https://www.healthplix.com/",
+      "https://remedoapp.com/",
+      "https://www.zocdoc.com/",
+      "https://www.doctolib.com/",
+      "https://www.lybrate.com/",
+      "https://www.docplanner.com/",
+      "https://www.vezeeta.com/",
+      "https://www.mfine.co/",
+      "https://www.1mg.com/",
+      "https://www.amwell.com/",
+     " https://www.eka.care/",
+     "https://www.docgenie.in/",
+     "https://www.narayanahealth.org/",
+     "https://healthfirstcenter.in/",
+     "https://navedahealthcare.com/",
+     "https://www.apollo247.com/"
+    ];
+     const CurrentPageUrl = page.url()
+     console.log("Log the current page url", CurrentPageUrl)
+     const validate = thirdPartyDoctorSites.find((site)=> CurrentPageUrl.includes(site))
+     if(validate && validate !== undefined)
+     {
+      return { thirdParty:true, link:CurrentPageUrl}
+     }
     // Final check for booking options
     const result = await page.evaluate(() => {
       const hasForm = !!document.querySelector('form[action*="book"]:not([action*="facebook"]), form[action*="formResponse"],form[action*="schedule"], form[action*="reserve"], form[action*="appointment"], form[action*="consult"], form[action*="register"]');
